@@ -1,0 +1,529 @@
+{
+  "Uuid": "cc7de561-e23d-4eec-afde-d24405364cf7",
+  "IsCustomNode": true,
+  "Category": "Dura Vermeer.Export",
+  "Description": "Export multiple views to IFC file.\r\nThe Project Origin option works only with Revit 2018 and above.\r\nSome other IFC options are embedded inside the python script.",
+  "Name": "Export IFC",
+  "ElementResolver": {
+    "ResolutionMap": {
+      "DSCore.List": {
+        "Key": "DSCore.List",
+        "Value": "DSCoreNodes.dll"
+      }
+    }
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "import clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n# Import ToDSType(bool) extension method\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n# Import geometry conversion extension methods\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n# Import DocumentManager and TransactionManager\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\nfrom System.Collections.Generic import *\r\n# Import RevitAPI\r\nclr.AddReference(\"RevitAPI\")\r\nimport Autodesk\r\nfrom Autodesk.Revit.DB import *\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp = uiapp.Application\r\nuidoc=DocumentManager.Instance.CurrentUIApplication.ActiveUIDocument\r\n\r\nfolder=UnwrapElement(IN[0])\r\nname=UnwrapElement(IN[1])\r\nview = UnwrapElement(IN[2])\r\nfileversion = IN[3]\r\nwallandcolumnsplitting = IN[4]\r\nexportbasequantities = IN[5]\r\nProjectorigin = IN[6]\r\n\r\n#IFCVersion=UnwrapElement(IN[3])\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\nresult = []\r\n\r\nfor i,v in enumerate(view):\r\n\toptions=IFCExportOptions()\r\n\t\r\n\t#if fileversion != None:\r\n\t#\toptions.FileVersion = fileversion\r\n\tif fileversion == \"IFC4\":\r\n\t\toptions.FileVersion = IFCVersion.IFC4\r\n\tif fileversion == \"IFC2x2\":\r\n\t\toptions.FileVersion = IFCVersion.IFC2x2\r\n\tif fileversion == \"IFC2x3\":\r\n\t\toptions.FileVersion = IFCVersion.IFC2x3\r\n\tif fileversion == \"IFC2x3CV2\":\r\n\t\toptions.FileVersion = IFCVersion.IFC2x3CV2\r\n\tif fileversion == \"IFCBCA\":\r\n\t\toptions.FileVersion = IFCVersion.IFCBCA\r\n\tif fileversion == \"IFCCOBIE\":\r\n\t\toptions.FileVersion = IFCVersion.IFCCOBIE\r\n\tif fileversion == \"\":\r\n\t\toptions.FileVersion = IFCVersion.Default\r\n\t\t\r\n\toptions.WallAndColumnSplitting = wallandcolumnsplitting\r\n\toptions.ExportBaseQuantities = exportbasequantities\r\n\toptions.FilterViewId = v.Id\r\n\toptions.AddOption(\"ExportInternalRevitPropertySets\",\"false\");\r\n\toptions.AddOption(\"ExportIFCCommonPropertySets\",\"true\");\r\n\toptions.AddOption(\"ExportBaseQuantities\",\"true\");\t\r\n\toptions.AddOption(\"ExportAnnotations \",\"false\");\r\n\toptions.AddOption(\"SpaceBoundaries \", \"2\");\r\n\toptions.AddOption(\"ExportRoomsInView\", \"false\");\t\r\n\toptions.AddOption(\"Use2DRoomBoundaryForVolume \", \"false\");\r\n\toptions.AddOption(\"UseFamilyAndTypeNameForReference\", \"false\");\r\n\toptions.AddOption(\"Export2DElements\", \"false\");\r\n\toptions.AddOption(\"ExportPartsAsBuildingElements\", \"false\");\r\n\toptions.AddOption(\"ExportBoundingBox\", \"false\");\r\n\toptions.AddOption(\"ExportSolidModelRep\", \"false\");\r\n\toptions.AddOption(\"ExportSchedulesAsPsets\", \"false\");\r\n\toptions.AddOption(\"ExportSpecificSchedules\", \"false\");\r\n\t#Doesn't work. It would be necessary to use OpenInBackground.\r\n\toptions.AddOption(\"ExportLinkedFiles\", \"false\");\r\n\toptions.AddOption(\"IncludeSiteElevation\",\"false\");\r\n\toptions.AddOption(\"StoreIFCGUID\", \"false\");\r\n\toptions.AddOption(\"VisibleElementsOfCurrentView\", \"true\");\r\n\toptions.AddOption(\"UseActiveViewGeometry\", \"false\");\r\n\toptions.AddOption(\"TessellationLevelOfDetail\", \"1\");\r\n \toptions.AddOption(\"ExportUserDefinedPsets\",\"true\");\r\n\toptions.AddOption(\"ExportUserDefinedPsetsFileName\",\"B:\\Settings\\RVT_Export\\Property Mapping_Dura.txt\"); \t\r\n \toptions.AddOption(\"SitePlacement\", IN[6]);\r\n#IFCVersion Version = (IFCVersion) Enum.Parse( typeof(IFCVersion), UnwrapElement(IN[3]), true );\r\n#x.FileVersion = IFCVersion.IFC2x3CV2\r\n\r\n\tc=doc.Export(folder, name[i], options)\r\n\tresult.append(c)\r\n\r\n# End Transaction\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\nif fileversion == \"\":\r\n\tOUT=\"Default settings used\"\r\nelse:\r\n\tOUT='Success'",
+      "VariableInputPorts": true,
+      "Id": "acd35c2d4b0b4cb3b2f7884aaafbb740",
+      "Inputs": [
+        {
+          "Id": "a9e8b681a4034ade861a2e5c3c600758",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9a6bb147c27542e4af29fb570154f3af",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5dd0703f18814f7199359097d8ce7576",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b36f454b8a664d58a007300291fb8dc7",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2edb6d0b0b1a4284b5c2190d94483b03",
+          "Name": "IN[4]",
+          "Description": "Input #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "48034205e7f14bd08d0fa4efa584b283",
+          "Name": "IN[5]",
+          "Description": "Input #5",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "16a6250293e04fc0a39813e9501a1b94",
+          "Name": "IN[6]",
+          "Description": "Input #6",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "515beac0d9af4146a028db07bb02f7dc",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded IronPython script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Output, DynamoCore",
+      "NodeType": "OutputNode",
+      "ElementResolver": null,
+      "Symbol": "Succeed",
+      "Id": "b9148294b88d4c72b4aa62e53f5bb255",
+      "Inputs": [
+        {
+          "Id": "463ca7f5dedc4685a269dafc344a315e",
+          "Name": "",
+          "Description": "",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [],
+      "Replication": "Disabled",
+      "Description": "A function output, use with custom nodes"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Symbol, DynamoCore",
+      "NodeType": "InputNode",
+      "Parameter": {
+        "Name": "DirectoryPath",
+        "TypeName": "var",
+        "TypeRank": -1,
+        "DefaultValue": null,
+        "Description": ""
+      },
+      "Id": "dc542c10cfbf48cba53de3c88a795b64",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "0d5a1f4b44b64885bb2e1abe884be321",
+          "Name": "",
+          "Description": "Symbol",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A function parameter, use with custom nodes.\r\n\r\nYou can specify the type and default value for parameter. E.g.,\r\n\r\ninput : var[]..[]\r\nvalue : bool = false"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Symbol, DynamoCore",
+      "NodeType": "InputNode",
+      "Parameter": {
+        "Name": "//Views as list\r\nViews",
+        "TypeName": "var",
+        "TypeRank": -1,
+        "DefaultValue": null,
+        "Description": ""
+      },
+      "Id": "d4ee07e5aafd4320bb70e254f3a1a18c",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "82236542f7004a98bf417b2a702ffbd3",
+          "Name": "",
+          "Description": "Symbol",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A function parameter, use with custom nodes.\r\n\r\nYou can specify the type and default value for parameter. E.g.,\r\n\r\ninput : var[]..[]\r\nvalue : bool = false"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Symbol, DynamoCore",
+      "NodeType": "InputNode",
+      "Parameter": {
+        "Name": "Filename",
+        "TypeName": "var",
+        "TypeRank": -1,
+        "DefaultValue": null,
+        "Description": "Filename as list"
+      },
+      "Id": "95d7acbb5dde4a5aa65ef1911d7c90c1",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a413d5a4537048dfa45c7bbd953daf63",
+          "Name": "",
+          "Description": "Symbol",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A function parameter, use with custom nodes.\r\n\r\nYou can specify the type and default value for parameter. E.g.,\r\n\r\ninput : var[]..[]\r\nvalue : bool = false"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "DSCore.List.Flatten(item,-1);",
+      "Id": "3e68fc66ecb143bba9bb1fa643f72052",
+      "Inputs": [
+        {
+          "Id": "ca8512428f3a49ffae3798288bfadd08",
+          "Name": "item",
+          "Description": "item",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "004b9b611e974761aa219cd7fa61409c",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Symbol, DynamoCore",
+      "NodeType": "InputNode",
+      "Parameter": {
+        "Name": "IFCversion",
+        "TypeName": "string",
+        "TypeRank": 0,
+        "DefaultValue": "\"IFC2x3\"",
+        "Description": "IFC Version"
+      },
+      "Id": "e3529bb9ae544d73b0685abb9ae5d4a9",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "6d613e0f67ed462eadac4b87017d3b20",
+          "Name": "",
+          "Description": "Symbol",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A function parameter, use with custom nodes.\r\n\r\nYou can specify the type and default value for parameter. E.g.,\r\n\r\ninput : var[]..[]\r\nvalue : bool = false"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Symbol, DynamoCore",
+      "NodeType": "InputNode",
+      "Parameter": {
+        "Name": "ProjectOrigin",
+        "TypeName": "string",
+        "TypeRank": 0,
+        "DefaultValue": "\"3\"",
+        "Description": "SharedCoordinates =\"0\", SiteSurveyPoint =\"1\",\nProjectBasePoint=\"2\", InternalCoordinates=\"3\""
+      },
+      "Id": "3c642313f2bc4c57814cd5eb51632452",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "1cacb0f6c5904407acb5f1b2d068ed3d",
+          "Name": "",
+          "Description": "Symbol",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A function parameter, use with custom nodes.\r\n\r\nYou can specify the type and default value for parameter. E.g.,\r\n\r\ninput : var[]..[]\r\nvalue : bool = false"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Symbol, DynamoCore",
+      "NodeType": "InputNode",
+      "Parameter": {
+        "Name": "WallAndColumnSplitting",
+        "TypeName": "bool",
+        "TypeRank": 0,
+        "DefaultValue": "false",
+        "Description": ""
+      },
+      "Id": "a0f1e69d65854d79ab933e65635bb9ef",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "181aff0f3cb3459d9a3a05468d923675",
+          "Name": "",
+          "Description": "Symbol",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A function parameter, use with custom nodes.\r\n\r\nYou can specify the type and default value for parameter. E.g.,\r\n\r\ninput : var[]..[]\r\nvalue : bool = false"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Symbol, DynamoCore",
+      "NodeType": "InputNode",
+      "Parameter": {
+        "Name": "ExportBaseQuantities",
+        "TypeName": "bool",
+        "TypeRank": 0,
+        "DefaultValue": "false",
+        "Description": ""
+      },
+      "Id": "aa1f236e05e8443d91eaa16cbb102ba1",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "ec5c0470922a463c857b08df25cb8e55",
+          "Name": "",
+          "Description": "Symbol",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A function parameter, use with custom nodes.\r\n\r\nYou can specify the type and default value for parameter. E.g.,\r\n\r\ninput : var[]..[]\r\nvalue : bool = false"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "515beac0d9af4146a028db07bb02f7dc",
+      "End": "463ca7f5dedc4685a269dafc344a315e",
+      "Id": "126e453cff1a446192cd69bf538b1e00"
+    },
+    {
+      "Start": "0d5a1f4b44b64885bb2e1abe884be321",
+      "End": "a9e8b681a4034ade861a2e5c3c600758",
+      "Id": "f1ec7961a82d465980e61c0cb0d981c0"
+    },
+    {
+      "Start": "82236542f7004a98bf417b2a702ffbd3",
+      "End": "5dd0703f18814f7199359097d8ce7576",
+      "Id": "f030fe58c93d4b7c8fb4e44f6552c86c"
+    },
+    {
+      "Start": "a413d5a4537048dfa45c7bbd953daf63",
+      "End": "ca8512428f3a49ffae3798288bfadd08",
+      "Id": "c62114f3dcc644b2a720596bc29ec2bf"
+    },
+    {
+      "Start": "004b9b611e974761aa219cd7fa61409c",
+      "End": "9a6bb147c27542e4af29fb570154f3af",
+      "Id": "9b24476bf9ee436f9d2c83810638ab97"
+    },
+    {
+      "Start": "6d613e0f67ed462eadac4b87017d3b20",
+      "End": "b36f454b8a664d58a007300291fb8dc7",
+      "Id": "82d91e82e0bc4be3b8fe1a238d5adcdf"
+    },
+    {
+      "Start": "1cacb0f6c5904407acb5f1b2d068ed3d",
+      "End": "16a6250293e04fc0a39813e9501a1b94",
+      "Id": "8a7714931cb241cb807b6fa0e44c7a78"
+    },
+    {
+      "Start": "181aff0f3cb3459d9a3a05468d923675",
+      "End": "2edb6d0b0b1a4284b5c2190d94483b03",
+      "Id": "cc50d99d7dc74471afabdcad27615a52"
+    },
+    {
+      "Start": "ec5c0470922a463c857b08df25cb8e55",
+      "End": "48034205e7f14bd08d0fa4efa584b283",
+      "Id": "73ab9507d0c148fabe3cbb9edc2c53ec"
+    }
+  ],
+  "Dependencies": [],
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": false,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.0.1.5055",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": -33.530704498291016,
+      "EyeY": 41.908260345458984,
+      "EyeZ": 129.89839172363281,
+      "LookX": 28.530702590942383,
+      "LookY": -30.908258438110352,
+      "LookZ": -137.89839172363281,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "Export IFC",
+        "Id": "acd35c2d4b0b4cb3b2f7884aaafbb740",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1868.51498098202,
+        "Y": 939.893950198465
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Output",
+        "Id": "b9148294b88d4c72b4aa62e53f5bb255",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2093.31498098202,
+        "Y": 939.893950198465
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Input",
+        "Id": "dc542c10cfbf48cba53de3c88a795b64",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1350.91498098202,
+        "Y": 757.893950198465
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Input",
+        "Id": "d4ee07e5aafd4320bb70e254f3a1a18c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1350.91498098202,
+        "Y": 925.893950198465
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Input",
+        "Id": "95d7acbb5dde4a5aa65ef1911d7c90c1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 915.18220021251,
+        "Y": 838.268027361531
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "3e68fc66ecb143bba9bb1fa643f72052",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1194.38220021251,
+        "Y": 842.481360694864
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Input",
+        "Id": "e3529bb9ae544d73b0685abb9ae5d4a9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1228.2402699771,
+        "Y": 1023.95003931307
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Input",
+        "Id": "3c642313f2bc4c57814cd5eb51632452",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1170.15072132814,
+        "Y": 1292.77995164258
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Input",
+        "Id": "a0f1e69d65854d79ab933e65635bb9ef",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1169.74776213349,
+        "Y": 1118.94630730889
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Input",
+        "Id": "aa1f236e05e8443d91eaa16cbb102ba1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1184.20617321691,
+        "Y": 1204.51562216986
+      }
+    ],
+    "Annotations": [
+      {
+        "Id": "e53b16cf960b4d8bbb628d271e0519f7",
+        "Title": "IFC Version :\r\n\"IFC2x2\";\r\n\"IFC2x3\";\r\n\"IFC2x3CV2\";\r\n\"IFC2x2\";\r\n\"IFC4\";\r\n\"IFCBCA\";\r\n\"IFCCOBIE\";",
+        "Nodes": [],
+        "Left": 1031.45937851964,
+        "Top": 973.374454285034,
+        "Width": 0.0,
+        "Height": 0.0,
+        "FontSize": 36.0,
+        "InitialTop": 0.0,
+        "InitialHeight": 0.0,
+        "TextblockHeight": 0.0,
+        "Background": "#FFC1D676"
+      }
+    ],
+    "X": -366.34533339471955,
+    "Y": -472.48764766625925,
+    "Zoom": 0.80859880794636019
+  }
+}
